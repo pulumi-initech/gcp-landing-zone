@@ -1,9 +1,2 @@
-config:
-  aws:region: us-east-1
-  azure:location: East US
-  gcp:region: us-central1
-  landing-zones:landingZoneFolder: folders/446096907877
-  landing-zones:orgName: pulumi
-  landing-zones:billingAccount: 011BE2-A16523-CA06E4
-  gcp:disableGlobalProjectWarning: "true"
-  landing-zones:environments: '["production","development"]'
+environment:
+  - landing-zones/dev
