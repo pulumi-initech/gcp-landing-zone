@@ -1,2 +1,2 @@
 environment:
-  - landing-zones/dev
+  - landing-zones/gcp-dev
