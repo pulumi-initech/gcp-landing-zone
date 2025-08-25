@@ -1,0 +1,7 @@
+name: landing-zones
+description: GCP landing zone
+runtime:
+  name: nodejs
+  options:
+    packagemanager: pnpm
+
