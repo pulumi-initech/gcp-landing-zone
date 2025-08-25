@@ -61,18 +61,6 @@ export class LzEnvironment extends pulumi.ComponentResource {
       { parent: envProject }
     );
 
-    // Enable Cloud Billing API
-    const billingApi = new gcp.projects.Service(
-      `billing-api-${args.environment}`,
-      {
-        project: envProject.projectId,
-        service: "cloudbilling.googleapis.com",
-        disableOnDestroy: true,
-      },
-      { parent: envProject }
-    );
-
-
     // Set outputs
     this.folderId = envFolder.id;
     this.projectId = envProject.projectId;
