@@ -10,6 +10,7 @@ export interface LzEnvironmentArgs {
 
 export class LzEnvironment extends pulumi.ComponentResource {
   public readonly folderId: pulumi.Output<string>;
+  public readonly project: gcp.organizations.Project;
   public readonly projectId: pulumi.Output<string>;
   public readonly projectName: pulumi.Output<string>;
   public readonly projectNumber: pulumi.Output<string>;
@@ -63,6 +64,7 @@ export class LzEnvironment extends pulumi.ComponentResource {
 
     // Set outputs
     this.folderId = envFolder.id;
+    this.project = envProject;
     this.projectId = envProject.projectId;
     this.projectName = envProject.name;
     this.projectNumber = envProject.number;
@@ -71,6 +73,7 @@ export class LzEnvironment extends pulumi.ComponentResource {
       folderId: this.folderId,
       projectId: this.projectId,
       projectName: this.projectName,
+      project: this.project,
       projectNumber: this.projectNumber,
     });
   }
