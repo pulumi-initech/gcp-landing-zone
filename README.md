@@ -16,7 +16,7 @@ The GCP landing zone implements a hierarchical folder structure with shared VPC 
 
 ## Project Structure
 
-```
+```text
 landing-zones/
 ├── index.ts                    # Main entry point
 ├── gcp/
@@ -46,16 +46,30 @@ landing-zones/
 
 ## Configuration
 
-Update `Pulumi.dev.yaml` with your organization details:
+This project uses Pulumi ESC (Environments, Secrets, and Configuration) for configuration management. Configure your environment in the Pulumi Cloud console:
+
+1. **Create or update your ESC environment** at [Pulumi Cloud](https://app.pulumi.com)
+2. **Set the following configuration values**:
 
 ```yaml
-config:
-  gcp:region: us-central1
-  landing-zones:orgName: pulumi
-  landing-zones:landingZoneFolder: folders/446096907877
-  landing-zones:billingAccount: 011BE2-A16523-CA06E4
-  landing-zones:environments: '["production","development"]'
-  gcp:disableGlobalProjectWarning: "true"
+values:
+  gcp:
+    region: us-central1
+    disableGlobalProjectWarning: "true"
+  landing-zones:
+    orgName: your-org-name
+    landingZoneFolder: folders/your-folder-id
+    billingAccount: your-billing-account-id
+    environments:
+      - production
+      - development
+```
+
+3. **Reference the ESC environment** in your `Pulumi.dev.yaml`:
+
+```yaml
+environment:
+  - landing-zones/dev
 ```
 
 ## Required Permissions
@@ -82,12 +96,11 @@ config:
    gcloud config set project [YOUR_PROJECT_ID]
    ```
 
-3. **Set Pulumi configuration**:
-   ```bash
-   pulumi config set landing-zones:orgName "your-org-name"
-   pulumi config set landing-zones:billingAccount "XXXXXX-XXXXXX-XXXXXX"
-   pulumi config set landing-zones:landingZoneFolder "folders/your-folder-id"
-   ```
+3. **Configure ESC environment**:
+   - Log in to [Pulumi Cloud](https://app.pulumi.com)
+   - Navigate to ESC (Environments, Secrets, and Configuration)
+   - Create or update your `landing-zones/dev` environment
+   - Add your organization-specific values as shown in the Configuration section above
 
    **To find your GCP Billing Account ID:**
    ```bash
