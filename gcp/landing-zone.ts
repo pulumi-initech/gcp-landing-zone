@@ -23,11 +23,6 @@ export class GcpLandingZone extends pulumi.ComponentResource {
   ) {
     super("custom:gcp:LandingZone", name, {}, opts);
 
-    // Get organization details
-    const organization = gcp.organizations.getOrganization({
-      domain: `${args.orgName.toLowerCase()}.com`,
-    });
-
     const lz = new gcp.organizations.Folder(
       "landing-zone-folder",
       {
