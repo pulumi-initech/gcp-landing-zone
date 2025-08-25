@@ -2,13 +2,13 @@ import * as pulumi from "@pulumi/pulumi";
 import * as gcp from "@pulumi/gcp";
 import { GcpMonitoring } from "./gcp-monitoring";
 
-export interface SharedServicesArgs {
+export interface LzSharedServicesArgs {
   orgName: string;
   parentFolder: pulumi.Input<string>;
   billingAccount: string;
 }
 
-export class SharedServices extends pulumi.ComponentResource {
+export class LzSharedServices extends pulumi.ComponentResource {
   public readonly projectId: pulumi.Output<string>;
   public readonly projectNumber: pulumi.Output<string>;
   public readonly projectName: pulumi.Output<string>;
@@ -16,7 +16,7 @@ export class SharedServices extends pulumi.ComponentResource {
 
   constructor(
     name: string,
-    args: SharedServicesArgs,
+    args: LzSharedServicesArgs,
     opts?: pulumi.ComponentResourceOptions
   ) {
     super("custom:gcp:SharedServices", name, {}, opts);

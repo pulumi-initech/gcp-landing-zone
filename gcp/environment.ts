@@ -1,14 +1,14 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as gcp from "@pulumi/gcp";
 
-export interface EnvironmentArgs {
+export interface LzEnvironmentArgs {
   orgName: string;
   environment: string;
   workloadsFolderId: pulumi.Input<string>;
   billingAccount: string;
 }
 
-export class Environment extends pulumi.ComponentResource {
+export class LzEnvironment extends pulumi.ComponentResource {
   public readonly folderId: pulumi.Output<string>;
   public readonly projectId: pulumi.Output<string>;
   public readonly projectName: pulumi.Output<string>;
@@ -16,7 +16,7 @@ export class Environment extends pulumi.ComponentResource {
 
   constructor(
     name: string,
-    args: EnvironmentArgs,
+    args: LzEnvironmentArgs,
     opts?: pulumi.ComponentResourceOptions
   ) {
     super("custom:gcp:Environment", name, {}, opts);

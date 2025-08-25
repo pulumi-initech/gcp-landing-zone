@@ -1,13 +1,14 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as gcp from "@pulumi/gcp";
-import { LzNetworking } from "./networking";
-import { Environment } from "./environment";
-import { SharedServices } from "./shared-services";
-import { Security } from "./security";
-import { EnvironmentSpec } from "./networking";
+import { LzNetworking, EnvironmentSpec } from "./networking";
+import { LzEnvironment } from "./environment";
+import { LzSharedServices } from "./shared-services";
+import { LzSecurity } from "./security";
 
 export interface GcpLandingZoneArgs {
   orgName: string;
+  environments: string[];
+  billingAccount: string;
   landingZoneFolder: string;
 }
 
@@ -21,10 +22,6 @@ export class GcpLandingZone extends pulumi.ComponentResource {
     opts?: pulumi.ComponentResourceOptions
   ) {
     super("custom:gcp:LandingZone", name, {}, opts);
-
-    const config = new pulumi.Config();
-    const billingAccount = config.require("billingAccount");
-    const environments = config.requireObject<string[]>("environments");
 
     // Get organization details
     const organization = gcp.organizations.getOrganization({
@@ -52,22 +49,22 @@ export class GcpLandingZone extends pulumi.ComponentResource {
       { parent: lz }
     );
 
-    const sharedServices = new SharedServices(
+    const sharedServices = new LzSharedServices(
       "lz-shared-services",
       {
         orgName: args.orgName,
         parentFolder: platformFolder.name,
-        billingAccount: billingAccount,
+        billingAccount: args.billingAccount,
       },
       { parent: platformFolder }
     );
   
-    const security = new Security(
+    const security = new LzSecurity(
       "lz-security",
       {
         orgName: args.orgName,
         platformFolderId: platformFolder.name,
-        billingAccount: billingAccount,
+        billingAccount: args.billingAccount,
       },
       { parent: platformFolder }
     );
@@ -85,12 +82,12 @@ export class GcpLandingZone extends pulumi.ComponentResource {
     );
 
     const environmentProjects: EnvironmentSpec[] = [];
-    for (const env of environments) {
-      const envInstance = new Environment(
+    for (const env of args.environments) {
+      const envInstance = new LzEnvironment(
         `${env}`,
         {
           orgName: args.orgName,
-          billingAccount: billingAccount,
+          billingAccount: args.billingAccount,
           environment: env,
           workloadsFolderId: workloadsFolder.name,
         },
@@ -107,7 +104,7 @@ export class GcpLandingZone extends pulumi.ComponentResource {
       "lz-networking",
       {
         orgName: args.orgName,
-        billingAccount: billingAccount,
+        billingAccount: args.billingAccount,
         platformFolderId: platformFolder.name,
         sharedServicesProjectId: sharedServices.projectId,
         sharedServicesProjectNumber: sharedServices.projectNumber,

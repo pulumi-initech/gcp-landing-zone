@@ -70,7 +70,7 @@ values:
 
 ```yaml
 environment:
-  - landing-zones/dev
+  - landing-zones/gcp-dev
 ```
 
 ## Required Permissions
@@ -130,9 +130,9 @@ The project uses Pulumi ComponentResources for modularity and reusability:
 
 - `GcpLandingZone`: Main orchestrator that creates the folder structure and coordinates all components
 - `LzNetworking`: Manages networking project, Shared VPC, subnets, and firewall rules
-- `SharedServices`: Creates shared services project and monitoring setup
-- `Security`: Manages security project and Cloud KMS encryption
-- `Environment`: Creates individual environment projects (prod, dev) with Shared VPC attachment
+- `LzSharedServices`: Creates shared services project and monitoring setup
+- `LzSecurity`: Manages security project and Cloud KMS encryption
+- `LzEnvironment`: Creates individual environment projects (prod, dev) with Shared VPC attachment
 
 ## Key Features
 

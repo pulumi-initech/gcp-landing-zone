@@ -8,7 +8,9 @@ const config = new pulumi.Config();
 
 const gcpLandingZone = new GcpLandingZone("gcp-landing-zone", {
     orgName: config.require("orgName"),
+    billingAccount: config.require("billingAccount"),
     landingZoneFolder: config.require("landingZoneFolder"),
+    environments: config.requireObject<string[]>("environments"),
 });
 
 export const gcpProjectIds = gcpLandingZone.projectNumbers;

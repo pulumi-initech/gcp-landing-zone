@@ -1,23 +1,19 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as gcp from "@pulumi/gcp";
 
-export interface SecurityArgs {
+export interface LzSecurityArgs {
   orgName: string;
   platformFolderId: pulumi.Input<string>;
   billingAccount: string;
 }
 
-export class Security extends pulumi.ComponentResource {
+export class LzSecurity extends pulumi.ComponentResource {
   public readonly projectId: pulumi.Output<string>;
   public readonly projectName: pulumi.Output<string>;
   public readonly projectNumber: pulumi.Output<string>;
   public readonly folderId: pulumi.Output<string>;
 
-  constructor(
-    name: string,
-    args: SecurityArgs,
-    opts?: pulumi.ComponentResourceOptions
-  ) {
+  constructor( name: string, args: LzSecurityArgs, opts?: pulumi.ComponentResourceOptions) {
     super("custom:gcp:Security", name, {}, opts);
 
     // Create security folder
