@@ -6,6 +6,8 @@ This project demonstrates a comprehensive GCP landing zone implementation using 
 
 The GCP landing zone implements a hierarchical folder structure with shared VPC networking:
 
+![GCP Landing Zone Architecture](gcp-landing-zone-architecture.png)
+
 ### GCP Landing Zone Structure
 
 - **Organization Structure**: Folder hierarchy for Platform, Workloads environments
@@ -53,13 +55,12 @@ This project uses Pulumi ESC (Environments, Secrets, and Configuration) for conf
 
 ```yaml
 values:
-  gcp:
-    region: us-central1
-    disableGlobalProjectWarning: "true"
-  landing-zones:
+  pulumiConfig:
+    gcp:region: us-central1
+    gcp:disableGlobalProjectWarning: "true"
     orgName: your-org-name
-    landingZoneFolder: folders/your-folder-id
-    billingAccount: your-billing-account-id
+    landingZoneFolder: <<folders/lz-parent-folder>
+    billingAccount: <<gcp-billing-account-id>>
     environments:
       - production
       - development
