@@ -1,133 +1,32 @@
-# Multi-Cloud Landing Zones with Pulumi
+# GCP Landing Zone with Pulumi
 
-This project demonstrates a comprehensive multi-cloud landing zone implementation using Pulumi across AWS, Azure, and Google Cloud Platform (GCP). It follows cloud-native best practices and implements standardized governance, security, and monitoring across all three major cloud providers.
+This project demonstrates a comprehensive GCP landing zone implementation using Pulumi with ComponentResource architecture. It follows Google Cloud best practices and implements standardized governance, security, and monitoring.
 
 ## Architecture Overview
 
-The landing zone architecture implements the following components for each cloud:
+The GCP landing zone implements a hierarchical folder structure with shared VPC networking:
 
-### AWS Infrastructure High-Level Design
+### GCP Landing Zone Structure
 
-```mermaid
-graph TB
-    subgraph "AWS Organization"
-        subgraph "Security OU"
-            AuditAcc["🔍 Audit Account"]
-            LogAcc["📝 Log Archive Account"]
-        end
-        
-        subgraph "Infrastructure OU"
-            NetAcc["🌐 Networking Account"]
-            SharedAcc["⚙️ Shared Services Account"]
-        end
-        
-        subgraph "Workloads OU"
-            ProdAcc["🏭 Production Account"]
-            DevAcc["🧪 Development Account"]
-        end
-    end
-    
-    subgraph "Shared VPC - 10.0.0.0/16"
-        subgraph "Multi-AZ Subnets"
-            PubSub["📡 Public Subnets<br/>10.0.1-3.0/24"]
-            PrivSub["🔒 Private Subnets<br/>10.0.4-6.0/24"]
-        end
-        
-        IGW["🌍 Internet Gateway"]
-        NAT["🔄 NAT Gateways"]
-    end
-    
-    subgraph "Shared Services"
-        RAM["📋 AWS RAM<br/>VPC Sharing"]
-        Security["🛡️ Security Services<br/>GuardDuty, Config, SecurityHub"]
-        Monitoring["📊 Monitoring<br/>CloudTrail, CloudWatch"]
-    end
-    
-    %% Core connections
-    NetAcc --> SharedVPC["Shared VPC"]
-    SharedVPC --> PubSub
-    SharedVPC --> PrivSub
-    PubSub --> IGW
-    PrivSub --> NAT
-    
-    %% RAM sharing
-    NetAcc --> RAM
-    RAM -.-> ProdAcc
-    RAM -.-> DevAcc
-    
-    %% Security services
-    Security -.-> AuditAcc
-    Monitoring -.-> LogAcc
-    
-    classDef account fill:#2196F3,stroke:#0D47A1,stroke-width:3px,color:#FFFFFF,font-size:14px,font-weight:bold
-    classDef network fill:#4CAF50,stroke:#1B5E20,stroke-width:3px,color:#FFFFFF,font-size:14px,font-weight:bold
-    classDef service fill:#FF9800,stroke:#E65100,stroke-width:3px,color:#FFFFFF,font-size:14px,font-weight:bold
-    
-    class AuditAcc,LogAcc,NetAcc,SharedAcc,ProdAcc,DevAcc account
-    class SharedVPC,PubSub,PrivSub,IGW,NAT network
-    class RAM,Security,Monitoring service
-```
-
-#### Architecture Summary
-
-**Multi-Account Structure:**
-- **Security OU**: Audit and log archive accounts for compliance
-- **Infrastructure OU**: Networking and shared services accounts
-- **Workloads OU**: Production and development accounts for applications
-
-**Shared VPC Model:**
-- Single VPC (10.0.0.0/16) owned by networking account
-- AWS RAM shares subnets with prod/dev accounts
-- Multi-AZ public/private subnets with NAT gateways
-
-**Centralized Services:**
-- Security monitoring via GuardDuty, Config, Security Hub
-- Centralized logging with CloudTrail and CloudWatch
-- Network isolation through security groups and SCPs
-
-### AWS Landing Zone
-- **Organization Structure**: AWS Organizations with Security, Infrastructure, Workloads, and Sandbox OUs
-- **Core Accounts**: Audit, Log Archive, Shared Services, Networking, Production, and Development accounts
-- **Networking**: Shared VPC architecture with centralized networking account owning VPCs and sharing subnets via AWS RAM (Resource Access Manager)
-- **VPC Sharing**: Production and development accounts consume shared subnets from the networking account
-- **Security**: Service Control Policies (SCPs), AWS Config, CloudTrail, GuardDuty, Security Hub, environment-specific security groups
-- **Compliance**: Automated compliance rules and monitoring
-
-### Azure Landing Zone
-- **Management Groups**: Hierarchical structure with Platform, Landing Zones, Corp, Online, and Sandbox management groups
-- **Subscriptions**: Separate subscriptions for connectivity, management, identity, production, and development
-- **Networking**: Hub-spoke architecture with Azure Firewall and VNet peering
-- **Security**: Azure Security Center, Defender for Cloud, Policy assignments
-- **Governance**: Azure Policy for compliance and governance
-
-### GCP Landing Zone
-- **Organization Structure**: Folder hierarchy for Platform, Workloads, and Sandbox environments
-- **Projects**: Separate projects for networking, shared services, security, production, and development
+- **Organization Structure**: Folder hierarchy for Platform, Workloads environments
+- **Projects**: Separate projects for networking, shared services, security, and workload environments
 - **Networking**: Shared VPC model with centralized networking project
-- **Shared VPC Setup**: Manual configuration required (see deployment notes)
-- **Security**: Security Command Center, Binary Authorization, Cloud Asset Inventory
-- **Compliance**: Organization policies and security monitoring
+- **Security**: Cloud KMS for encryption, IAM for access control
+- **Monitoring**: Centralized monitoring in shared services project
 
 ## Project Structure
 
 ```
 landing-zones/
-├── index.ts                    # Main entry point orchestrating all clouds
-├── aws/
-│   └── landing-zone.ts         # AWS landing zone component
-├── azure/
-│   └── landing-zone.ts         # Azure landing zone component
+├── index.ts                    # Main entry point
 ├── gcp/
-│   └── landing-zone.ts         # GCP landing zone component
-├── shared/
-│   ├── monitoring.ts           # Multi-cloud monitoring orchestrator
-│   ├── security.ts             # Multi-cloud security orchestrator
-│   ├── aws-monitoring.ts       # AWS-specific monitoring
-│   ├── azure-monitoring.ts     # Azure-specific monitoring
-│   ├── gcp-monitoring.ts       # GCP-specific monitoring
-│   ├── aws-security.ts         # AWS-specific security
-│   ├── azure-security.ts       # Azure-specific security
-│   └── gcp-security.ts         # GCP-specific security
+│   ├── landing-zone.ts         # Main GCP landing zone orchestrator
+│   ├── networking.ts           # Networking ComponentResource
+│   ├── shared-services.ts      # Shared services ComponentResource
+│   ├── security.ts             # Security ComponentResource
+│   ├── environment.ts          # Environment ComponentResource
+│   ├── gcp-monitoring.ts       # GCP monitoring implementation
+│   └── gcp-security.ts         # GCP security baseline
 ├── package.json
 ├── Pulumi.yaml
 ├── Pulumi.dev.yaml             # Configuration file
@@ -137,15 +36,13 @@ landing-zones/
 ## Prerequisites
 
 1. **Pulumi CLI** installed and configured
-2. **Cloud Provider CLI tools**:
-   - AWS CLI configured with appropriate permissions
-   - Azure CLI logged in with sufficient permissions
-   - Google Cloud SDK configured with appropriate permissions
-3. **Node.js** and **pnpm** installed
-4. **Organizational Permissions**:
-   - AWS: Organization master account access
-   - Azure: Global administrator or equivalent permissions
-   - GCP: Organization administrator permissions
+2. **Google Cloud SDK** configured with appropriate permissions
+3. **Node.js** and **npm** installed
+4. **GCP Organizational Permissions**:
+   - Organization Administrator role
+   - Project Creator role
+   - Folder Admin role
+   - Billing Account Administrator role
 
 ## Configuration
 
@@ -153,32 +50,15 @@ Update `Pulumi.dev.yaml` with your organization details:
 
 ```yaml
 config:
-  aws:region: us-east-1
-  azure:location: East US
   gcp:region: us-central1
-  landing-zones:orgName: YourOrgName
-  landing-zones:aws.enabled: true
-  landing-zones:azure.enabled: true
-  landing-zones:gcp.enabled: true
+  landing-zones:orgName: pulumi
+  landing-zones:landingZoneFolder: folders/446096907877
+  landing-zones:billingAccount: 011BE2-A16523-CA06E4
+  landing-zones:environments: '["production","development"]'
+  gcp:disableGlobalProjectWarning: "true"
 ```
 
 ## Required Permissions
-
-### AWS
-- **Existing AWS Organization**: This demo assumes you have an existing AWS Organization
-- Organizations full access
-- Account creation permissions
-- IAM permissions for policy and role creation
-- VPC and networking permissions
-- CloudTrail, Config, GuardDuty, and Security Hub permissions
-
-### Azure
-- Global Administrator or custom role with:
-  - Management group creation and modification
-  - Subscription creation and management
-  - Resource group and resource creation
-  - Policy assignment permissions
-  - Security Center configuration permissions
 
 ### GCP
 - **Existing GCP Organization**: This demo assumes you have an existing GCP Organization
@@ -186,36 +66,27 @@ config:
 - Organization Administrator role
 - Project Creator role
 - Folder Admin role
-- Security Admin role
 - Compute Admin role for networking
+- Security Admin role for KMS and IAM
 
 ## Deployment
 
 1. **Install dependencies**:
    ```bash
-   pnpm install
+   npm install
    ```
 
-2. **Configure cloud providers** (ensure all CLIs are authenticated):
+2. **Configure GCP CLI**:
    ```bash
-   aws configure
-   az login
    gcloud auth login
+   gcloud config set project [YOUR_PROJECT_ID]
    ```
 
 3. **Set Pulumi configuration**:
    ```bash
-   pulumi config set orgName "YourOrgName"
-   pulumi config set aws.enabled true
-   pulumi config set aws.organizationRootId "r-xxxxxxxxxxxx"  # Your AWS Organization root ID
-   pulumi config set azure.enabled true
-   pulumi config set gcp.enabled true
-   pulumi config set billingAccount "XXXXXX-XXXXXX-XXXXXX"  # Your GCP billing account ID
-   ```
-
-   **To find your AWS Organization Root ID:**
-   ```bash
-   aws organizations list-roots --query 'Roots[0].Id' --output text
+   pulumi config set landing-zones:orgName "your-org-name"
+   pulumi config set landing-zones:billingAccount "XXXXXX-XXXXXX-XXXXXX"
+   pulumi config set landing-zones:landingZoneFolder "folders/your-folder-id"
    ```
 
    **To find your GCP Billing Account ID:**
@@ -223,126 +94,109 @@ config:
    gcloud billing accounts list --format="value(name)"
    ```
 
-4. **Deploy the landing zones**:
+   **To find your GCP Organization/Folder ID:**
+   ```bash
+   gcloud organizations list
+   gcloud resource-manager folders list --organization=[ORG_ID]
+   ```
+
+4. **Deploy the landing zone**:
    ```bash
    pulumi up
    ```
 
-5. **Configure GCP Shared VPC (manual step)**:
-   After deployment, enable Shared VPC manually:
-   ```bash
-   # Enable the networking project as a Shared VPC host
-   gcloud compute shared-vpc enable [NETWORKING_PROJECT_ID]
-   
-   # Associate service projects with the host project
-   gcloud compute shared-vpc associated-projects add [PROD_PROJECT_ID] --host-project [NETWORKING_PROJECT_ID]
-   gcloud compute shared-vpc associated-projects add [DEV_PROJECT_ID] --host-project [NETWORKING_PROJECT_ID]
-   ```
-
-6. **View outputs**:
+5. **View outputs**:
    ```bash
    pulumi stack output
    ```
 
+## ComponentResource Architecture
+
+The project uses Pulumi ComponentResources for modularity and reusability:
+
+- `GcpLandingZone`: Main orchestrator that creates the folder structure and coordinates all components
+- `LzNetworking`: Manages networking project, Shared VPC, subnets, and firewall rules
+- `SharedServices`: Creates shared services project and monitoring setup
+- `Security`: Manages security project and Cloud KMS encryption
+- `Environment`: Creates individual environment projects (prod, dev) with Shared VPC attachment
+
 ## Key Features
 
-### Multi-Cloud Governance
-- Centralized policy management across all clouds
-- Consistent security baselines
-- Automated compliance monitoring
-- Cost management and optimization
+### Hierarchical Organization
+- Platform folder containing networking, shared services, and security
+- Workloads folder containing production and development environments
+- Clear separation of concerns and responsibilities
+
+### Shared VPC Networking
+- Central networking project owns the VPC and subnets
+- Environment projects attach as service projects
+- Proper IAM permissions for subnet usage
+- Firewall rules for internal communication
 
 ### Security by Design
-- Zero-trust network architecture
-- Identity and access management integration
-- Security monitoring and alerting
-- Automated threat detection
+- Cloud KMS for encryption key management
+- IAM policies for least-privilege access
+- Security baseline monitoring
+- Centralized security project
 
 ### Operational Excellence
-- Centralized logging and monitoring
-- Multi-cloud dashboards
-- Automated backup and disaster recovery
-- Infrastructure as Code (IaC) best practices
-
-### Scalability
-- Component-based architecture for reusability
-- Environment-specific configurations
+- Centralized monitoring in shared services project
 - Automated resource provisioning
-- Cost-optimized resource allocation
-
-## Component Resources
-
-The project uses Pulumi component resources to encapsulate cloud-specific logic:
-
-- `AwsLandingZone`: Complete AWS landing zone with organizations, accounts, and networking
-- `AzureLandingZone`: Azure management groups, subscriptions, and hub-spoke networking
-- `GcpLandingZone`: GCP folders, projects, and shared VPC architecture
-- `MultiCloudMonitoring`: Unified monitoring across all clouds
-- `MultiCloudSecurity`: Consistent security policies and monitoring
+- Infrastructure as Code best practices
+- Project-specific service account permissions
 
 ## Outputs
 
 The deployment provides the following outputs:
 
 ```typescript
-// AWS outputs
-aws.organizationId          // AWS Organization ID
-aws.auditAccountId         // Audit account ID
-aws.logArchiveAccountId    // Log archive account ID
-aws.networkingAccountId    // Networking account ID (owns the shared VPC)
-aws.vpcIds                 // Shared VPC ID (same for all environments)
-aws.resourceShareArn       // AWS RAM resource share ARN for VPC sharing
-aws.securityGroupIds       // Security group IDs by environment
-
-// Azure outputs
-azure.managementGroupId    // Root management group ID
-azure.platformSubscriptionIds // Platform subscription IDs
-azure.vnetIds             // VNet IDs by environment
-
 // GCP outputs
-gcp.organizationId         // GCP Organization ID
-gcp.folderIds             // Folder IDs by purpose
-gcp.projectIds            // Project IDs by environment
-gcp.vpcIds                // VPC IDs
+folderIds: {
+  platform: "folders/123456789",
+  workloads: "folders/987654321", 
+  networking: "folders/456789123",
+  "shared-services": "folders/654321987",
+  security: "folders/321987654"
+}
 
-// Monitoring outputs
-monitoring.dashboardUrls   // Dashboard URLs by cloud
-monitoring.alertingEndpoints // Alert endpoints by cloud
-
-// Security outputs
-security.aws              // AWS security resource IDs
-security.azure            // Azure security resource IDs
-security.gcp              // GCP security resource IDs
+projectNumbers: {
+  "pulumi-net-abc123": "123456789012",
+  "pulumi-shared": "987654321098", 
+  "pulumi-sec": "456789123456",
+  "pulumi-pro": "789123456789",
+  "pulumi-dev": "321987654321"
+}
 ```
 
 ## Customization
 
-To customize the landing zones for your organization:
+To customize the landing zone for your organization:
 
-1. **Modify configuration** in `Pulumi.dev.yaml`
-2. **Update component resources** in respective cloud directories
-3. **Adjust security policies** in the shared security components
+1. **Modify environments** in `Pulumi.dev.yaml` configuration
+2. **Update component resources** in the gcp directory  
+3. **Adjust security policies** in the security component
 4. **Customize monitoring** dashboards and alerts
-5. **Add additional compliance** rules as needed
+5. **Add additional projects** by extending the environments array
 
 ## Best Practices Implemented
 
-- **Separation of Concerns**: Each cloud provider has its own component
-- **Infrastructure as Code**: All resources defined in code
-- **Security First**: Security controls implemented from day one
-- **Monitoring and Observability**: Comprehensive monitoring setup
-- **Cost Management**: Resource tagging and cost allocation
-- **Compliance**: Automated compliance monitoring and reporting
-- **Disaster Recovery**: Cross-region and cross-cloud resilience
+- **ComponentResource Architecture**: Modular, reusable components
+- **Shared VPC Model**: Centralized networking with distributed consumption  
+- **Infrastructure as Code**: All resources defined in TypeScript
+- **Security First**: KMS encryption and IAM controls from day one
+- **Monitoring and Observability**: Centralized monitoring setup
+- **Project Naming**: Consistent, unique project ID generation
+- **Resource Organization**: Clear folder hierarchy and labeling
 
 ## Troubleshooting
 
 Common issues and solutions:
 
-1. **Permission Errors**: Ensure all required permissions are granted
-2. **Quota Limits**: Check cloud provider quotas for organizations/projects
-3. **DNS Resolution**: Verify custom domain ownership for organizations
-4. **Network Conflicts**: Ensure CIDR blocks don't overlap between clouds
+1. **Permission Errors**: Ensure all required GCP IAM roles are assigned
+2. **Quota Limits**: Check GCP quotas for projects and compute resources
+3. **Shared VPC Issues**: Verify organization-level Shared VPC permissions
+4. **Project ID Conflicts**: Project IDs include random suffixes for uniqueness
+5. **Billing Account**: Ensure billing account is active and linked
 
 ## Contributing
 
@@ -350,8 +204,8 @@ To contribute to this project:
 
 1. Fork the repository
 2. Create a feature branch
-3. Follow the existing code structure and patterns
-4. Test thoroughly across all enabled cloud providers
+3. Follow the existing ComponentResource patterns
+4. Test thoroughly in a GCP organization
 5. Submit a pull request
 
 ## License
