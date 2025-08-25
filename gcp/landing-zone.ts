@@ -76,6 +76,7 @@ export class GcpLandingZone extends pulumi.ComponentResource {
       { parent: lz }
     );
 
+    const environments: LzEnvironment[] = [];
     const environmentProjects: EnvironmentSpec[] = [];
     for (const env of args.environments) {
       const envInstance = new LzEnvironment(
@@ -88,6 +89,7 @@ export class GcpLandingZone extends pulumi.ComponentResource {
         },
         { parent: workloadsFolder }
       );
+      environments.push(envInstance);
       environmentProjects.push({
         name: env,
         projectId: envInstance.projectId,
@@ -103,9 +105,13 @@ export class GcpLandingZone extends pulumi.ComponentResource {
         platformFolderId: platformFolder.name,
         sharedServicesProjectId: sharedServices.projectId,
         sharedServicesProjectNumber: sharedServices.projectNumber,
-        environmentProjects: environmentProjects,
+        environmentProjects: environments.map(env => ({
+          name: env.projectName.apply(n => n),
+          projectId: env.projectId,
+          projectNumber: env.projectNumber,
+        })) as unknown as EnvironmentSpec[],
       },
-      { parent: platformFolder }
+      { parent: platformFolder, dependsOn: [sharedServices, ...environments] }
     );
 
     // Set outputs
