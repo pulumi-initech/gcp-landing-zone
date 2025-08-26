@@ -7,7 +7,7 @@ export interface LzNetworkingArgs {
   billingAccount: pulumi.Input<string>;
   sharedServicesProjectId: pulumi.Input<string>;
   sharedServicesProjectNumber: pulumi.Input<string>;
-  environmentProjects?: EnvironmentSpec[];
+  environments?: EnvironmentSpec[];
 }
 
 export interface EnvironmentSpec {
@@ -62,6 +62,7 @@ export class LzNetworking extends pulumi.ComponentResource {
       {
         project: networkingProject.projectId,
         service: "compute.googleapis.com",
+        disableDependentServices: true,
       },
       { parent: this }
     );
@@ -88,12 +89,12 @@ export class LzNetworking extends pulumi.ComponentResource {
     );
 
     let i = 2;
-    for (const env of args.environmentProjects || []) {
+    for (const env of args.environments || []) {
       // Subnets in different regions
       const envSubnet = new gcp.compute.Subnetwork(
         `${env.name}-subnet`,
         {
-          name: `${args.orgName.toLowerCase()}-subnet-${env.name}`,
+          name: pulumi.interpolate`${args.orgName.toLowerCase()}-subnet-${env.name}`,
           project: networkingProject.projectId,
           network: hostVpc.id,
           ipCidrRange: `10.0.${i}.0/24`,
@@ -110,7 +111,7 @@ export class LzNetworking extends pulumi.ComponentResource {
             },
           ],
         },
-        { parent: hostVpc }
+        { parent: hostVpc, deleteBeforeReplace: true }
       );
 
       // Attach shared services as SharedVPC service project

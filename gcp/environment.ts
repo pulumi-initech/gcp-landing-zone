@@ -22,7 +22,6 @@ export class LzEnvironment extends pulumi.ComponentResource {
   ) {
     super("custom:gcp:Environment", name, {}, opts);
 
-
     // Create environment folder
     const envFolder = new gcp.organizations.Folder(
       `${args.environment}-folder`,
@@ -48,7 +47,7 @@ export class LzEnvironment extends pulumi.ComponentResource {
           purpose: "workloads",
         },
       },
-      { parent: envFolder }
+      { parent: this }
     );
 
     // Enable Compute API
@@ -57,9 +56,10 @@ export class LzEnvironment extends pulumi.ComponentResource {
       {
         project: envProject.projectId,
         service: "compute.googleapis.com",
-        disableOnDestroy: true,
+        disableOnDestroy: false,
+        disableDependentServices: true,
       },
-      { parent: envProject }
+      { parent: this }
     );
 
     // Set outputs

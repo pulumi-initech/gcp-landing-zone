@@ -52,6 +52,7 @@ export class LzSharedServices extends pulumi.ComponentResource {
       {
         project: sharedServicesProject.projectId,
         service: "compute.googleapis.com",
+        disableDependentServices: true,
       },
       { parent: sharedServicesProject }
     );

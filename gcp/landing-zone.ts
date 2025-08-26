@@ -76,8 +76,8 @@ export class GcpLandingZone extends pulumi.ComponentResource {
       { parent: lz }
     );
 
-    const projects: gcp.organizations.Project[] = [];
-    const environmentProjects: EnvironmentSpec[] = [];
+    const projects: LzEnvironment[] = [];
+    const environments: EnvironmentSpec[] = [];
     for (const env of args.environments) {
       const envInstance = new LzEnvironment(
         `${env}`,
@@ -89,8 +89,8 @@ export class GcpLandingZone extends pulumi.ComponentResource {
         },
         { parent: workloadsFolder }
       );
-      projects.push(envInstance.project);
-      environmentProjects.push({
+      projects.push(envInstance);
+      environments.push({
         name: env,
         projectId: envInstance.projectId,
         projectNumber: envInstance.projectNumber,
@@ -105,7 +105,7 @@ export class GcpLandingZone extends pulumi.ComponentResource {
         platformFolderId: platformFolder.name,
         sharedServicesProjectId: sharedServices.projectId,
         sharedServicesProjectNumber: sharedServices.projectNumber,
-        environmentProjects: environmentProjects,
+        environments: environments,
       },
       { parent: platformFolder, dependsOn: [sharedServices, ...projects] }
     );
@@ -144,7 +144,7 @@ export class GcpLandingZone extends pulumi.ComponentResource {
         sharedServices: pulumi.all([sharedServices.projectId, sharedServices.projectNumber]),
         security: pulumi.all([security.projectId, security.projectNumber]),
         ...Object.fromEntries(
-          environmentProjects.map(env => [
+          environments.map(env => [
             env.name, 
             pulumi.all([env.projectId, env.projectNumber])
           ])
